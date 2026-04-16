@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = 'Generate AI summaries for books using Groq'
+    help = 'Generate AI summaries and sentiment for books using Groq'
 
     def add_arguments(self, parser):
         parser.add_argument('--batch', type=int, default=50)
@@ -35,19 +35,44 @@ class Command(BaseCommand):
             
             for book in batch:
                 try:
-                    prompt = f"""Write a brief 2-sentence summary of this book:
+                    prompt = f"""Analyze this book and provide:
+1. A 2-sentence summary
+2. Sentiment: Positive, Negative, or Mixed
+3. Sentiment score: 0.0 to 1.0
+
 Title: {book.title}
 By: {book.author or 'Unknown'}
-Description: {book.description[:800]}"""
+Description: {book.description[:800]}
+
+Respond in format:
+SUMMARY: <2 sentences>
+SENTIMENT: <Positive/Negative/Mixed>
+SCORE: <0.0-1.0>"""
 
                     response = client.chat.completions.create(
-                        model='llama-3-8b-8192',
+                        model='llama-3.1-8b-instant',
                         messages=[{'role': 'user', 'content': prompt}],
                         temperature=0.5,
+                        max_tokens=300,
                     )
 
-                    summary = response.choices[0].message.content.strip()
-                    book.ai_summary = summary[:500]
+                    content = response.choices[0].message.content.strip()
+                    
+                    summary = ''
+                    sentiment = ''
+                    score = ''
+                    
+                    for line in content.split('\n'):
+                        if line.startswith('SUMMARY:'):
+                            summary = line.replace('SUMMARY:', '').strip()
+                        elif line.startswith('SENTIMENT:'):
+                            sentiment = line.replace('SENTIMENT:', '').strip().lower()
+                        elif line.startswith('SCORE:'):
+                            score = line.replace('SCORE:', '').strip()
+                    
+                    book.ai_summary = summary[:500] if summary else content[:500]
+                    book.ai_sentiment = sentiment if sentiment in ['positive', 'negative', 'mixed'] else 'neutral'
+                    book.ai_sentiment_score = float(score) if score else 0.5
                     book.save()
 
                     self.stdout.write(f'{book.title[:30]}...')

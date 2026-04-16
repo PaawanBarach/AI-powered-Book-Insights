@@ -1,0 +1,24 @@
+:root {
+  --primary: #171717;
+  --secondary: #525252;
+  --tertiary: #737373;
+  --accent: #dc2626;
+  --accent-light: #fee2e2;
+  --bg: #f5f5f5;
+  --bg-card: #ffffff;
+  --border: #d4d4d4;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background-color: var(--bg);
+  color: var(--primary);
+}
+
+.skeleton {
+  @apply bg-gray-200 animate-pulse;
+}

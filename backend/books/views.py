@@ -43,9 +43,24 @@ class BookViewSet(viewsets.ModelViewSet):
         queryset = Book.objects.all()
         genre = self.request.query_params.get('genre')
         if genre:
-            queryset = queryset.filter(subjects__iexact=genre)
+            genre_normalized = genre.replace(' ', '_').lower()
+            queryset = queryset.filter(subjects__icontains=genre_normalized)
+        
         search = self.request.query_params.get('search')
-        if search:
+        if search and not genre:
+            try:
+                results = search_similar_books(search, top_k=50)
+                if results and results.get('ids') and results['ids'][0]:
+                    similar_ids = [int(id_) for id_ in results['ids'][0]]
+                    queryset = Book.objects.filter(pk__in=similar_ids)
+            except Exception as e:
+                logger.error(f'Vector search failed, fallback to text: {e}')
+                queryset = queryset.filter(
+                    Q(title__icontains=search) |
+                    Q(author__icontains=search) |
+                    Q(subjects__icontains=search)
+                )
+        elif search:
             queryset = queryset.filter(
                 Q(title__icontains=search) |
                 Q(author__icontains=search) |

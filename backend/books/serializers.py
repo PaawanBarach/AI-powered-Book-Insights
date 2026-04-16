@@ -26,6 +26,11 @@ class BookSerializer(serializers.ModelSerializer):
     def get_subjects_list(self, obj):
         return obj.get_subjects_list()
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['has_embeddings'] = bool(instance.chunks.exists())
+        return data
+
 
 class BookListSerializer(serializers.ModelSerializer):
     class Meta:
