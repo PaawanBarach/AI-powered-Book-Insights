@@ -15,7 +15,6 @@ build/
 *.log
 local_settings.py
 db.sqlite3
-media/
 
 # Node
 node_modules/
@@ -45,4 +44,3 @@ docs/
 backend/chroma_db/
 backend/qa_cache/
 backend/db.sqlite3
-backend/media/
